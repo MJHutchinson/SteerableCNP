@@ -1,0 +1,30 @@
+# @package hydra
+job:
+  config:
+    # configuration for the ${hydra.job.override_dirname} runtime variable
+    override_dirname:
+      exclude_keys: [name, launcher, run, dataset, model]
+
+run:
+  # Output directory for normal runs
+  dir: ${paths.logdir}/${paths.rundir}/${seed}
+  # dir: ${paths.logdir}/${experiment_name}_${hydra.job.override_dirname}/${seed}
+  # dir: ${paths.logdir}/${dataset.name}/${model.name}/${experiment_name}_${hydra.job.override_dirname}/${seed}
+  # dir: ${paths.experiments}/${name}/${hydra.job.override_dirname}/${run}
+sweep:
+#   # Output directory for sweep runs
+  dir: ${paths.logdir}/${paths.rundir}
+  # dir: ${paths.logdir}/${experiment_name}_${hydra.job.override_dirname}
+  # dir: ${paths.logdir}/${dataset.name}/${model.name}/${experiment_name}_${hydra.job.override_dirname}
+  # dir: ${paths.experiments}/${name}/${hydra.job.override_dirname}
+  subdir: ${seed}
+
+job_logging:
+  formatters:
+    simple:
+      format: '[%(levelname)s] - %(message)s'
+  handlers:
+    file:
+      filename: run.log
+  root:
+    handlers: [console, file]

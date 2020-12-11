@@ -1,0 +1,29 @@
+defaults:
+  - dataset: rbf
+  - model: C4
+  - job
+  - hydra/launcher: submitit_local
+  - launcher: local
+
+paths:
+  datadir: /data/ziz/not-backed-up/mhutchin/EquivCNP/data
+  logdir: /data/ziz/not-backed-up/mhutchin/EquivCNP/logs/gp
+  rundir: ${dataset.name}/${model.name}
+
+experiment_name: test_hyrda
+
+seed: 0
+
+epochs: 10
+
+batch_size: 30
+splits: [0.7, 0.1, 0.2]
+
+min_context: 5
+max_context: 50
+total_points: 50
+
+log_every_n_steps: 1
+flush_logs_every_n_steps: 50
+val_check_interval: 1.0
+log_gpu_memory: True

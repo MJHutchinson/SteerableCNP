@@ -1,0 +1,18 @@
+# @package _group_
+
+cnn_decoder: D16-regular_huge
+embedding_kernel_type: rbf
+embedding_kernel_length_scale: 1.0
+embedding_kernel_sigma_var: 1.0
+embedding_kernel_learnable: True
+normalise_embedding: True
+output_kernel_type: rbf
+output_kernel_length_scale: 1.0
+output_kernel_sigma_var: 1.0
+output_kernel_learnable: True
+normalise_output: True
+grid_ranges: [-10, 10]
+n_axes: 30
+dim: 2
+
+name: ${model.cnn_decoder}

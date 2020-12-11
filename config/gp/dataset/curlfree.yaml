@@ -1,0 +1,12 @@
+# @package _group_
+
+kernel_type: curlfree
+length_scale: 5.0
+sigma_var: 10.0
+obs_noise: 0.02
+max_r: 10
+n_grid: 30
+dataset_size: 100000
+dataset_seed: 0
+
+name: GP_${kernel_type}_${dataset_seed}
