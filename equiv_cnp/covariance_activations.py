@@ -1,6 +1,7 @@
 import math
 
 import torch
+import torch.nn.functional as F
 
 from einops import rearrange
 
@@ -27,6 +28,13 @@ def quadratic_covariance_activation(pre_activation, epsilon=1e-6):
     return rearrange(covariance, "b n d2 d1 -> b n (d1 d2)")
 
 
-def diagonal_covariance_activation(pre_activation):
+def diagonal_quadratic_covariance_activation(pre_activation):
     b, n, _ = pre_activation.shape
     return torch.diag_embed(pre_activation.pow(2)).view(b, n, -1)
+
+
+def diagonal_softplus_covariance_activation(pre_activation, min_sigma=0.1):
+    b, n, _ = pre_activation.shape
+    return torch.diag_embed((min_sigma + F.softplus(pre_activation)).pow(2)).view(
+        b, n, -1
+    )

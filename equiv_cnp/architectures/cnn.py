@@ -28,7 +28,7 @@ def build_cnn_2d(in_dim, hidden_dims, kernel_sizes, out_dim, activation="relu"):
                 layer_dims[i],
                 layer_dims[i + 1],
                 kernel_sizes[i],
-                padding=(kernel_sizes[i] - 1) / 2,
+                padding=int((kernel_sizes[i] - 1) / 2),
             )
         )
         layers.append(activations[activation]())

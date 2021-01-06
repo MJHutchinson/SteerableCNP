@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import pytorch_lightning as pl
 
 from equiv_cnp.equiv_cnp import EquivCNP
@@ -13,9 +14,16 @@ from equiv_cnp.kernel import (
 )
 from equiv_cnp.covariance_activations import (
     quadratic_covariance_activation,
-    diagonal_covariance_activation,
+    diagonal_quadratic_covariance_activation,
+    diagonal_softplus_covariance_activation,
 )
 from equiv_cnp.lightning import Mean
+
+covariance_activation_functions = {
+    "quadratic": quadratic_covariance_activation,
+    "diagonal_quadratic": diagonal_quadratic_covariance_activation,
+    "diagonal_softplus": diagonal_softplus_covariance_activation,
+}
 
 
 class LightningEquivCNP(pl.LightningModule):
@@ -27,6 +35,8 @@ class LightningEquivCNP(pl.LightningModule):
         embedding_kernel_learnable=True,
         normalise_embedding=True,
         cnn_decoder="C4-regular_big",
+        covariance_activation="quadratic",
+        covariance_activation_parameters={},
         output_kernel_type="rbf",
         output_kernel_length_scale=1.0,
         output_kernel_sigma_var=1.0,
@@ -34,29 +44,45 @@ class LightningEquivCNP(pl.LightningModule):
         normalise_output=True,
         grid_ranges=[-10, 10],
         n_axes=30,
-        dim=2,
+        x_dim=2,
+        context_dim=2,
+        prediction_dim=2,
+        context_in_target=False,
+        lr=5e-4,
+        **kwargs,
     ):
         super().__init__()
 
+        # parse the embedding kernel to use
         embedding_kernel = self.parse_kernel(
-            embedding_kernel_type,
-            3,
-            embedding_kernel_length_scale,
-            embedding_kernel_sigma_var,
-            embedding_kernel_learnable,
+            kernel_type=embedding_kernel_type,
+            x_dim=x_dim,
+            rkhs_dim=context_dim + 1,
+            length_scale=embedding_kernel_length_scale,
+            sigma_var=embedding_kernel_sigma_var,
+            learnable_length_scale=embedding_kernel_learnable,
         )
-        grid_ranges = [-10, 10]
-        cnn, covariance_activation = self.parse_cnn(cnn_decoder)
+        # parse the CNN decoder and the activation function to apply to the covariances
+        cnn, covariance_activation = self.parse_cnn_covariance_activation(
+            cnn_decoder,
+            context_dim,
+            prediction_dim,
+            covariance_activation,
+            covariance_activation_parameters,
+        )
+        # parse the output kernel
         output_kernel = self.parse_kernel(
-            output_kernel_type,
-            6,
-            output_kernel_length_scale,
-            output_kernel_sigma_var,
-            output_kernel_learnable,
+            kernel_type=output_kernel_type,
+            x_dim=x_dim,
+            rkhs_dim=prediction_dim + prediction_dim ** 2,
+            length_scale=output_kernel_length_scale,
+            sigma_var=output_kernel_sigma_var,
+            learnable_length_scale=output_kernel_learnable,
         )
 
+        # create the EquivCNP
         self.equiv_cnp = EquivCNP(
-            prediction_dim=dim,
+            prediction_dim=prediction_dim,
             covariance_activation_function=covariance_activation,
             grid_ranges=grid_ranges,
             n_axes=n_axes,
@@ -65,8 +91,12 @@ class LightningEquivCNP(pl.LightningModule):
             normalise_output=normalise_output,
             cnn=cnn,
             output_kernel=output_kernel,
-            dim=dim,
+            dim=x_dim,
         )
+
+        self.context_in_target = context_in_target
+
+        self.lr = lr
 
         self.val_ll = Mean()
         self.test_ll = Mean()
@@ -76,6 +106,7 @@ class LightningEquivCNP(pl.LightningModule):
     def parse_kernel(
         self,
         kernel_type,
+        x_dim,
         rkhs_dim,
         length_scale,
         sigma_var,
@@ -83,10 +114,10 @@ class LightningEquivCNP(pl.LightningModule):
     ):
         if kernel_type == "rbf":
             kernel = SeparableKernel(
-                2,
+                x_dim,
                 rkhs_dim,
                 RBFKernelReparametrised(
-                    2,
+                    x_dim,
                     log_length_scale=nn.Parameter(torch.tensor(length_scale).log())
                     if learnable_length_scale
                     else torch.tensor(length_scale).log(),
@@ -94,24 +125,24 @@ class LightningEquivCNP(pl.LightningModule):
                 ),
             )
         elif kernel_type == "divfree":
-            if rkhs_dim != 2:
+            if (rkhs_dim != x_dim) & rkhs_dim != 2:
                 raise ValueError(
-                    f"RKHS dim for {kernel_type} must be 2. Given {rkhs_dim}."
+                    f"RKHS and X dim for {kernel_type} must be 2. Given {rkhs_dim=}, {x_dim=}."
                 )
             kernel = RBFDivergenceFreeKernelReparametrised(
-                2,
+                x_dim,
                 log_length_scale=nn.Parameter(torch.tensor(length_scale).log())
                 if learnable_length_scale
                 else torch.tensor(length_scale).log(),
                 sigma_var=sigma_var,
             )
         elif kernel_type == "curlfree":
-            if rkhs_dim != 2:
+            if (rkhs_dim != x_dim) & rkhs_dim != 2:
                 raise ValueError(
-                    f"RKHS dim for {kernel_type} must be 2. Given {rkhs_dim}."
+                    f"RKHS and X dim for {kernel_type} must be 2. Given {rkhs_dim=}, {x_dim=}."
                 )
             kernel = RBFCurlFreeKernelReparametrised(
-                2,
+                x_dim,
                 log_length_scale=nn.Parameter(torch.tensor(length_scale).log())
                 if learnable_length_scale
                 else torch.tensor(length_scale).log(),
@@ -122,23 +153,45 @@ class LightningEquivCNP(pl.LightningModule):
 
         return kernel
 
-    def parse_cnn(self, cnn_decoder_string):
+    def parse_cnn_covariance_activation(
+        self,
+        cnn_decoder_string,
+        context_dim,
+        prediction_dim,
+        covariance_activation,
+        covariance_activation_parameters,
+    ):
         group, name = cnn_decoder_string.split("-")
+
+        # get the right activation function and create a lambda with the specified arguments passed in
+        covariance_activation_function = lambda X: covariance_activation_functions[
+            covariance_activation
+        ](X, **covariance_activation_parameters)
 
         if group == "T2":
             return (
-                get_cnn_decoder(name, 3, 2, covariance_activation="diagonal"),
-                diagonal_covariance_activation,
+                get_cnn_decoder(
+                    name,
+                    context_dim,
+                    prediction_dim,
+                    covariance_activation=covariance_activation,
+                ),
+                covariance_activation_function,
             )
         else:
             flip = group[0] == "D"
-            N = int(group[1])
+            N = int(group[1:])
+
+            if context_dim == 1:
+                rep_ids = [[0]]
+            elif context_dim == 2:
+                rep_ids = [[1]] if not flip else [[1, 1]]
 
             return (
                 get_e2_decoder(
-                    N, flip, name, [1], [1], covariance_activation="quadratic"
+                    N, flip, name, rep_ids, rep_ids, covariance_activation="quadratic"
                 ),
-                quadratic_covariance_activation,
+                covariance_activation_function,
             )
 
     def forward(self, X_context, Y_context, X_target):
@@ -159,10 +212,15 @@ class LightningEquivCNP(pl.LightningModule):
             Y_prediction_mean, Y_prediction_cov, Y_target
         )
 
+        # self.log("mean_pred", Y_prediction_mean.mean(), on_step=True, on_epoch=False)
+        # self.log("mean_cov", Y_prediction_cov.mean(), on_step=True, on_epoch=False)
+
         return log_ll
 
     def training_step(self, batch, batch_idx):
-        log_ll = self.compute_batch_log_loss(batch, context_in_target=False)
+        log_ll = self.compute_batch_log_loss(
+            batch, context_in_target=self.context_in_target
+        )
 
         self.log("train_loss", -log_ll.mean(), on_step=True, on_epoch=False)
         self.log("train_log_lik", log_ll.mean(), on_step=True, on_epoch=False)
@@ -195,8 +253,31 @@ class LightningEquivCNP(pl.LightningModule):
 
     def test_epoch_end(self, test_step_outputs):
         test_ll = self.test_ll.compute()
+
         self.log("test_ll", test_ll, prog_bar=True)
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.equiv_cnp.parameters(), 1e-4)
+        optimizer = torch.optim.Adam(self.equiv_cnp.parameters(), self.lr)
         return optimizer
+
+
+class LightningImageEquivCNP(LightningEquivCNP):
+    def __init__(
+        self,
+        *args,
+        sigmoid_mean=True,
+        **kwargs,
+    ):
+        super(LightningImageEquivCNP, self).__init__(*args, **kwargs)
+
+        self.sigmoid_mean = sigmoid_mean
+
+    def forward(self, X_context, Y_context, X_target):
+        Y_prediction_mean, Y_prediction_cov = self.equiv_cnp(
+            X_context, Y_context, X_target
+        )
+
+        if self.sigmoid_mean:
+            Y_prediction_mean = torch.sigmoid(Y_prediction_mean)
+
+        return Y_prediction_mean, Y_prediction_cov

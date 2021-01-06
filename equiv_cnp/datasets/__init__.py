@@ -1,1 +1,2 @@
-from .gp_dataset import GPDataset
+from .gp import GPDataset
+from .mnist import MNISTDataset

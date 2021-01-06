@@ -7,7 +7,7 @@ import e2cnn
 from e2cnn import gspaces, group
 from e2cnn import nn as gnn
 
-from equiv_cnp.utils import Expression, get_pre_covariance_rep, reps_from_ids
+from equiv_cnp.utils import Expression, get_pre_covariance_field_type, reps_from_ids
 
 activations = {"relu": gnn.ReLU, "normrelu": gnn.NormNonLinearity}
 
@@ -90,13 +90,15 @@ def build_equiv_cnn_decoder(
         gnn.FieldType(gspace, reps_from_ids(gspace, ids)) for ids in hidden_reps_ids
     ]
 
-    mean_rep = reps_from_ids(gspace, mean_rep_ids)
+    mean_field_type = gnn.FieldType(gspace, reps_from_ids(gspace, mean_rep_ids))
 
-    pre_covariance_activation_rep = get_pre_covariance_rep(
-        gspace, covariance_activation
+    pre_covariance_field_type = get_pre_covariance_field_type(
+        gspace, mean_field_type, covariance_activation
     )
-    out_field_type = gnn.FieldType(gspace, [*mean_rep, pre_covariance_activation_rep])
 
+    out_field_type = mean_field_type + pre_covariance_field_type
+
+    print(out_field_type)
     return build_equiv_cnn_2d(
         in_field_type,
         hidden_field_types,

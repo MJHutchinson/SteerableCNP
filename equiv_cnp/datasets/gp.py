@@ -31,6 +31,7 @@ class GPDataset(data.Dataset):
         dataset_size=100_000,
         dataset_seed=0,
         create=True,
+        **kwargs,
     ):
         """Load a GP dataset, generating if need be
 

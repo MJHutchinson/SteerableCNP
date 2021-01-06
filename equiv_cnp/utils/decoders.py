@@ -403,26 +403,26 @@ def get_cnn_decoder(
     elif name == "small":
         list_hid_channels = [8, 12, 12]
         kernel_sizes = [5, 9, 11, 5]
-        non_linearity = ["ReLU"]
+        non_linearity = "relu"
 
     elif name == "middle":
         list_hid_channels = 4 * [24]
         kernel_sizes = 5 * [7]
-        non_linearity = ["ReLU"]
+        non_linearity = "relu"
 
     elif name == "big":
         list_hid_channels = 6 * [40]
         kernel_sizes = 7 * [7]
-        non_linearity = ["ReLU"]
+        non_linearity = "relu"
 
     elif name == "huge":
         list_hid_channels = 8 * [52]
         kernel_sizes = 9 * [9]
-        non_linearity = ["ReLU"]
+        non_linearity = "relu"
     else:
         raise ValueError(f"{name} is not a recognised architecture for cnn decoders")
 
-    cov_est_dim = get_pre_covariance_dim(covariance_activation)
+    cov_est_dim = get_pre_covariance_dim(mean_dim, covariance_activation)
 
     return build_cnn_decoder(
         context_dim,

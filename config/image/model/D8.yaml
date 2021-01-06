@@ -1,6 +1,7 @@
 # @package _group_
 
 cnn_decoder: D8-regular_huge
+sigmoid_mean: False
 embedding_kernel_type: rbf
 embedding_kernel_length_scale: 7.0
 embedding_kernel_sigma_var: 1.0
@@ -13,12 +14,12 @@ output_kernel_learnable: True
 normalise_output: True
 covariance_activation: quadratic
 covariance_activation_parameters: {}
-grid_ranges: [-10, 10]
-n_axes: 30
+grid_ranges: [-3,30]
+n_axes: 33
 x_dim: 2
-context_dim: 2
-prediction_dim: 2
+context_dim: 1
+prediction_dim: 1
 context_in_target: False
-lr: 5e-4
+lr: 3e-4
 
 name: ${model.cnn_decoder}

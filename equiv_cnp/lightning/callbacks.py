@@ -1,5 +1,7 @@
 import os
 
+import torch
+
 from pytorch_lightning.callbacks import ModelCheckpoint as BaseModelCheckpoint
 from pytorch_lightning.utilities import rank_zero_only
 from pytorch_lightning.loggers import CSVLogger as BaseCSVLogger
@@ -168,7 +170,7 @@ class InferencePlotCallback(PlotCallback):
             self._save_plot(
                 os.path.join(
                     self.dirpath,
-                    f"inference_epoch_{trainer.current_epoch}_plot_{i}.png",
+                    f"inference_epoch_{trainer.current_epoch}_{trainer.global_step}_plot_{i}.png",
                 ),
                 trainer,
             )
@@ -242,7 +244,110 @@ class GPComparePlotCallback(PlotCallback):
 
             self._save_plot(
                 os.path.join(
-                    self.dirpath, f"epoch_{trainer.current_epoch}_plot_{i}.png"
+                    self.dirpath,
+                    f"epoch_{trainer.current_epoch}_{trainer.global_step}_plot_{i}.png",
+                ),
+                trainer,
+            )
+
+            plt.close()
+
+
+def points_to_partial_img(img_size, x_points, y_points, fill_color=[0.0, 0.0, 1.0]):
+    img = np.zeros([img_size, img_size, 3])
+    x_points = x_points.astype(int)
+
+    if len(y_points.shape) == 1:
+        y_points = np.repeat(y_points[:, np.newaxis], 3, axis=1)
+
+    img[:, :, 0] = fill_color[0]
+    img[:, :, 1] = fill_color[1]
+    img[:, :, 2] = fill_color[2]
+
+    for point, color in zip(x_points, y_points):
+        img[point[1], point[0]] = color
+
+    return img
+
+
+def points_to_img(img_size, x_points, y_points):
+    img = np.zeros([img_size, img_size])
+    x_points = x_points.astype(int)
+
+    for point, val in zip(x_points, y_points):
+        img[point[1], point[0]] = val
+
+    return img
+
+
+class ImageCompleationPlotCallback(PlotCallback):
+    def __init__(self, img_size, *args, fill_color=[0.0, 0.0, 1.0], **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.img_size = img_size
+        self.fill_color = fill_color
+
+    def make_plots(self, pl_module, batch, trainer):
+        X_context, Y_context, X_target, Y_target = batch
+
+        if trainer.on_gpu:
+            X_context = X_context.to(trainer.root_gpu)
+            Y_context = Y_context.to(trainer.root_gpu)
+            X_target = X_target.to(trainer.root_gpu)
+            Y_target = Y_target.to(trainer.root_gpu)
+
+        X_target = torch.cat([X_context, X_target], dim=1)
+        Y_target = torch.cat([Y_context, Y_target], dim=1)
+
+        Y_prediction_mean, Y_prediction_cov = pl_module.forward(
+            X_context, Y_context, X_target
+        )
+
+        X_context = X_context.cpu().numpy()
+        Y_context = Y_context.cpu().numpy()
+        X_target = X_target.cpu().numpy()
+        Y_target = Y_target.cpu().numpy()
+        Y_prediction_mean = Y_prediction_mean.cpu().numpy()
+        Y_prediction_cov = Y_prediction_cov.cpu().numpy()
+
+        for i in range(self.n_plots):
+            fig, axs = plt.subplots(1, 3)
+
+            context_img = points_to_partial_img(
+                self.img_size,
+                X_context[i],
+                Y_context[i],
+                self.fill_color,
+            )
+            mean_img = points_to_img(
+                self.img_size,
+                X_target[i],
+                Y_prediction_mean[i],
+            )
+            var_img = points_to_img(
+                self.img_size,
+                X_target[i],
+                Y_prediction_cov[i],
+            )
+
+            im = axs[0].imshow(context_img)
+            axs[0].set_title("Context")
+            # fig.colorbar(im, ax=axs[0])
+
+            im = axs[1].imshow(mean_img, cmap="gray", vimn=0, vmax=1)
+            axs[1].set_title("Mean")
+            # fig.colorbar(im, ax=axs[1])
+
+            im = axs[2].imshow(var_img, cmap="viridis")
+            axs[2].set_title("Var")
+            fig.colorbar(im, ax=axs[2])
+
+            plt.tight_layout()
+
+            self._save_plot(
+                os.path.join(
+                    self.dirpath,
+                    f"epoch_{trainer.current_epoch}_{trainer.global_step}_plot_{i}.png",
                 ),
                 trainer,
             )

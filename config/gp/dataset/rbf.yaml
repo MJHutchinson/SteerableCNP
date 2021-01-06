@@ -9,4 +9,4 @@ n_grid: 30
 dataset_size: 100000
 dataset_seed: 0
 
-name: ${cnn_decoder}
+name: GP_${dataset.kernel_type}

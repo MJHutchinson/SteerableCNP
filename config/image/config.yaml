@@ -1,5 +1,5 @@
 defaults:
-  - dataset: rbf
+  - dataset: MNIST
   - model: C4
   - job
   - hydra/launcher: submitit_local
@@ -7,23 +7,22 @@ defaults:
 
 paths:
   datadir: /data/ziz/not-backed-up/mhutchin/EquivCNP/data
-  logdir: /data/ziz/not-backed-up/mhutchin/EquivCNP/logs/gp
+  logdir: /data/ziz/not-backed-up/mhutchin/EquivCNP/logs/image
   rundir: ${dataset.name}/${model.name}
 
 experiment_name: match_peter_sweep
 
 seed: 0
 
-epochs: 20
+epochs: 30
+batch_size: 16
+test_valid_splits: [0.6, 0.4]
 
-batch_size: 30
-splits: [0.7, 0.1, 0.2]
-
-min_context: 5
-max_context: 50
-total_points: 50
+min_context: 8
+max_context: 392
+total_points: 784
 
 log_every_n_steps: 1
 flush_logs_every_n_steps: 50
-val_check_interval: 1.0
+val_check_interval: 0.5
 log_gpu_memory: True

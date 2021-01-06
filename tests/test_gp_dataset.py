@@ -10,7 +10,7 @@ dataset = GPDataset(
     5,
     50,
     50,
-    kernel_type="rbf",
+    kernel_type="curlfree",
     length_scale=5.0,
     sigma_var=10.0,
     obs_noise=0.02,
@@ -23,7 +23,7 @@ dataset = GPDataset(
 dataset
 # %%
 
-dataloader = DataLoader(dataset, 10, shuffle=True, collate_fn=dataset._coalate_fn)
+dataloader = DataLoader(dataset, 10, shuffle=True, collate_fn=dataset._collate_fn)
 
 # %%
 
@@ -38,7 +38,7 @@ Y = dataset.Y[id]
 plot_vector_field(X, Y, scale=150)
 
 # %%
-id = 2
+id = 5
 
 X, Y, _ = dataset[0]
 

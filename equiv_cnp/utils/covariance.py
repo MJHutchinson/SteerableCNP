@@ -5,6 +5,7 @@ import torch.utils.data as utils
 
 import e2cnn
 from e2cnn import gspaces, group
+from e2cnn import nn as gnn
 
 
 def eigenvalue_covariance_estimate_rep(gspace):
@@ -45,28 +46,30 @@ def eigenvalue_covariance_estimate_rep(gspace):
     return psd_rep
 
 
-def get_pre_covariance_rep(gspace, covariance_activation="quadratic"):
+def get_pre_covariance_field_type(
+    gspace, mean_field_type, covariance_activation="quadratic"
+):
     if covariance_activation == "quadratic":
-        if isinstance(gspace, gspaces.FlipRot2dOnR2):
-            vec_rep = gspace.irrep(1, 1)
-        else:
-            vec_rep = gspace.irrep(1)
-        return group.directsum(2 * [vec_rep])
+        # stack dimension copies of the mean prediction field type
+        print(mean_field_type.size * [mean_field_type])
+        return sum(
+            (mean_field_type.size - 1) * [mean_field_type], start=mean_field_type
+        )
     elif covariance_activation == "eigenvalue":
-        return eigenvalue_covariance_estimate_rep(gspace)
+        return gnn.FieldType(gspace, eigenvalue_covariance_estimate_rep(gspace))
     else:
         raise ValueError(
             f"{covariance_activation} is not a recognised covariance activation type"
         )
 
 
-def get_pre_covariance_dim(covariance_activation="quadratic"):
+def get_pre_covariance_dim(mean_dim, covariance_activation="quadratic"):
     if covariance_activation == "quadratic":
-        return 4
+        return mean_dim ** 2
     elif covariance_activation == "eigenvalue":
         return 6
-    elif covariance_activation == "diagonal":
-        return 2
+    elif covariance_activation in ["diagonal_quadratic", "diagonal_softplus"]:
+        return mean_dim
     else:
         raise ValueError(
             f"{covariance_activation} is not a recognised covariance activation type"

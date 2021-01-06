@@ -9,4 +9,4 @@ n_grid: 30
 dataset_size: 100000
 dataset_seed: 0
 
-name: GP_${kernel_type}_${dataset_seed}
+name: GP_${dataset.kernel_type}
