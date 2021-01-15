@@ -36,8 +36,8 @@ def kernel_smooth(X_context, Y_context, X_target, kernel, normalise=False):
     if normalise:
         K = rearrange(K, "b (n1 d1) (n2 d2) -> b n1 n2 d1 d2", d1=d, d2=d)
         Y_target = (
-            # (K.sum(dim=2) + torch.eye(d).to(K.device) * 1e-6).inverse()
-            K.sum(dim=2).inverse()
+            (K.sum(dim=2) + torch.eye(d).to(K.device) * 1e-6).inverse()
+            # K.sum(dim=2).inverse()
             @ Y_target.unsqueeze(-1)
         ).squeeze(-1)
 

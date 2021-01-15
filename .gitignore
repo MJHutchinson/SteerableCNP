@@ -133,3 +133,4 @@ logs/
 data/
 .vscode/
 multirun/
+.venv_cpu

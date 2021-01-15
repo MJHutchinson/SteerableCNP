@@ -51,7 +51,6 @@ def get_pre_covariance_field_type(
 ):
     if covariance_activation == "quadratic":
         # stack dimension copies of the mean prediction field type
-        print(mean_field_type.size * [mean_field_type])
         return sum(
             (mean_field_type.size - 1) * [mean_field_type], start=mean_field_type
         )

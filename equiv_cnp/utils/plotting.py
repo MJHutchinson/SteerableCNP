@@ -2,6 +2,8 @@ import math
 
 import torch
 
+import numpy as np
+
 from einops import rearrange
 
 import matplotlib.pyplot as plt
@@ -181,3 +183,85 @@ def plot_embedding(
     )
 
     ax.set_aspect("equal")
+
+
+def points_to_partial_img(img_size, x_points, y_points, fill_color=[0.0, 0.0, 1.0]):
+    img = np.zeros([img_size, img_size, 3])
+    x_points = x_points.astype(int)
+
+    if len(y_points.shape) == 1:
+        y_points = np.repeat(y_points[:, np.newaxis], 3, axis=1)
+
+    img[:, :, 0] = fill_color[0]
+    img[:, :, 1] = fill_color[1]
+    img[:, :, 2] = fill_color[2]
+
+    for point, color in zip(x_points, y_points):
+        img[point[1], point[0]] = color
+
+    return img
+
+
+def points_to_img(img_size, x_points, y_points):
+    img = np.zeros([img_size, img_size])
+    x_points = x_points.astype(int)
+
+    for point, val in zip(x_points, y_points):
+        img[point[1], point[0]] = val
+
+    return img
+
+
+def plot_image_compleation(
+    X_context,
+    Y_context,
+    X_target,
+    Y_target,
+    Y_pred_mean,
+    Y_pred_cov,
+    img_size,
+    fill_color=[0.0, 0.0, 1.0],
+):
+    fig, axs = plt.subplots(2, 3)
+
+    context_img = points_to_partial_img(
+        img_size,
+        X_context,
+        Y_context,
+        fill_color,
+    )
+    target_img = points_to_img(img_size, X_target, Y_target)
+    mean_img = points_to_img(
+        img_size,
+        X_target,
+        Y_pred_mean,
+    )
+    var_img = points_to_img(
+        img_size,
+        X_target,
+        Y_pred_cov,
+    )
+    mean_diff_img = np.abs(mean_img - target_img)
+
+    axs[0][0].imshow(context_img)
+    axs[0][0].set_title("Context")
+
+    axs[0][1].imshow(mean_img, cmap="gray", vmin=0, vmax=1)
+    axs[0][1].set_title("Mean")
+
+    im = axs[0][2].imshow(var_img, cmap="viridis")
+    axs[0][2].set_title("Var")
+    fig.colorbar(im, ax=axs[0][2])
+
+    axs[1][1].imshow(target_img, cmap="gray", vmin=0, vmax=1)
+    axs[1][1].set_title("Target")
+
+    im = axs[1][2].imshow(mean_diff_img, cmap="viridis")
+    axs[1][2].set_title("Mean - Target")
+    fig.colorbar(im, ax=axs[1][2])
+
+    axs[1][0].axis("off")
+
+    plt.tight_layout()
+
+    return fig, axs

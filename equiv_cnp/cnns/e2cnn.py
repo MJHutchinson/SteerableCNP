@@ -19,6 +19,7 @@ def build_equiv_cnn_2d(
     out_field_type,
     gspace,
     activation="relu",
+    modify_init=1.0,
 ):
     """
     Input:
@@ -44,12 +45,17 @@ def build_equiv_cnn_2d(
                 layer_field_types[i + 1],
                 kernel_sizes[i],
                 padding=int((kernel_sizes[i] - 1) / 2),
+                initialize=True,
             )
         )
         if i != len(layer_field_types) - 2:
             layers.append(activations[activation](layer_field_types[i + 1]))
 
     cnn = gnn.SequentialModule(*layers)
+
+    # TODO: dirty fix to alleviate weird initialisations
+    for p in cnn.parameters():
+        p.data[:] = p.data * modify_init
 
     return nn.Sequential(
         Expression(lambda X: gnn.GeometricTensor(X, in_field_type)),
@@ -98,7 +104,6 @@ def build_equiv_cnn_decoder(
 
     out_field_type = mean_field_type + pre_covariance_field_type
 
-    print(out_field_type)
     return build_equiv_cnn_2d(
         in_field_type,
         hidden_field_types,
@@ -106,4 +111,5 @@ def build_equiv_cnn_decoder(
         out_field_type,
         gspace,
         activation,
+        1.0 if not (mean_rep_ids == [[0]] and context_rep_ids == [[0]]) else 0.833,
     )

@@ -1,0 +1,20 @@
+# @package _group_
+
+name: MultiMNIST
+seed: 0
+
+train_args:
+  translate: False
+  rotate: False
+  n_digits: 1
+  canvas_multiplier: 1
+finetune_args:
+  translate: False
+  rotate: False
+  n_digits: 1
+  canvas_multiplier: 2
+test_args:
+  translate: True
+  rotate: True
+  n_digits: 2
+  canvas_multiplier: 2

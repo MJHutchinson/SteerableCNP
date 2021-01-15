@@ -14,15 +14,18 @@ experiment_name: match_peter_sweep
 
 seed: 0
 
-epochs: 30
-batch_size: 16
+epochs: 5
+finetune_epochs: 5
+batch_size: 28
+finetune_batch_size: 16
 test_valid_splits: [0.6, 0.4]
 
-min_context: 8
-max_context: 392
-total_points: 784
+min_context_fraction: 0.01
+max_context_fraction: 0.5
+n_points_fraction: 1.0
 
 log_every_n_steps: 1
 flush_logs_every_n_steps: 50
 val_check_interval: 0.5
 log_gpu_memory: True
+debug: False

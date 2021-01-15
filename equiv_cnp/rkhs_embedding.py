@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 from equiv_cnp.kernel import kernel_smooth
-from equiv_cnp.utils import grid_2d, expand_with_ones
+from equiv_cnp.utils import grid_2d, grid_3d, expand_with_ones
 
 
 class DiscretisedRKHSEmbedding(nn.Module):
@@ -14,7 +14,9 @@ class DiscretisedRKHSEmbedding(nn.Module):
         self.kernel = kernel
         self.dim = dim
         self.normalise = normalise
+        self.set_grid(grid_ranges, n_axes)
 
+    def set_grid(self, grid_ranges, n_axes):
         # if passed one range, expand the grid ranges to cover all dims
         if not isinstance(grid_ranges[0], list):
             grid_ranges = [grid_ranges] * self.dim
@@ -38,6 +40,23 @@ class DiscretisedRKHSEmbedding(nn.Module):
                     max_y=grid_ranges[1][1],
                     n_xaxis=n_axes[0],
                     n_yaxis=n_axes[1],
+                    flatten=True,
+                ),
+                persistent=True,
+            )
+        elif self.dim == 3:
+            self.register_buffer(
+                "grid",
+                grid_3d(
+                    min_x=grid_ranges[0][0],
+                    max_x=grid_ranges[0][1],
+                    min_y=grid_ranges[1][0],
+                    max_y=grid_ranges[1][1],
+                    min_z=grid_ranges[1][0],
+                    max_z=grid_ranges[1][1],
+                    n_xaxis=n_axes[0],
+                    n_yaxis=n_axes[1],
+                    n_zaxis=n_axes[1],
                     flatten=True,
                 ),
                 persistent=True,

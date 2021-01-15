@@ -7,7 +7,10 @@ from e2cnn import group
 import e2cnn
 
 
-from equiv_cnp.architectures import build_equiv_cnn_decoder, build_cnn_decoder
+# from e3nn.networks import ImageGatedConvNetwork
+
+
+from equiv_cnp.cnns import build_equiv_cnn_decoder, build_cnn_decoder
 from equiv_cnp.utils import get_pre_covariance_dim
 
 """
@@ -347,6 +350,20 @@ def get_C4_parameters(name):
     else:
         raise ValueError(f"{name} is not a recognised architecture for C16 decoders")
     return hidden_reps_ids, kernel_sizes, non_linearity[0]
+
+
+# def get_E3_paramters(name):
+#     if name == 'little':
+#         hidden_reps_ids =
+#     elif name == "small":
+#     elif name == "middle":
+#     elif name == "big":
+#     elif name == "huge":
+#     else:
+#         raise ValueError(f"{name} is not a recognised architecture for E3 decoders")
+#     return hidden_reps_ids, kernel_size, layers
+
+# def get_e3_decoder(name, context_rep_ids, mean_rep_ids):
 
 
 def get_e2_decoder(

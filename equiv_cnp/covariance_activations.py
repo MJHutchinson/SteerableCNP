@@ -33,7 +33,12 @@ def diagonal_quadratic_covariance_activation(pre_activation):
     return torch.diag_embed(pre_activation.pow(2)).view(b, n, -1)
 
 
-def diagonal_softplus_covariance_activation(pre_activation, min_sigma=0.1):
+def diagonal_softplus_covariance_activation(pre_activation, min_var=0.1):
+    b, n, _ = pre_activation.shape
+    return torch.diag_embed(min_var + F.softplus(pre_activation)).view(b, n, -1)
+
+
+def diagonal_quadratic_softplus_covariance_activation(pre_activation, min_sigma=0.1):
     b, n, _ = pre_activation.shape
     return torch.diag_embed((min_sigma + F.softplus(pre_activation)).pow(2)).view(
         b, n, -1

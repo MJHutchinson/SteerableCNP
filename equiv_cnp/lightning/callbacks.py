@@ -1,4 +1,5 @@
 import os
+import math
 
 import torch
 
@@ -16,7 +17,12 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 from equiv_cnp.gp import conditional_gp_posterior
-from equiv_cnp.utils import plot_inference, plot_vector_field, plot_covariances
+from equiv_cnp.utils import (
+    plot_inference,
+    plot_vector_field,
+    plot_covariances,
+    plot_image_compleation,
+)
 
 
 import os
@@ -58,26 +64,36 @@ class CSVLogger(BaseCSVLogger):
 
 
 class PlotCallback(Callback):
-    def __init__(self, n_plots, dirpath):
+    def __init__(self, n_plots, dirpath, train=False, valid=True, test=True):
         super().__init__()
         self.n_plots = n_plots
 
+        self.train = train
+        self.test = test
+        self.valid = valid
+
         self.__init_plots_dir(dirpath)
 
-    def make_plots(self, pl_module, batch, trainer):
+    def make_plots(self, pl_module, batch, trainer, dataset):
         pass
+
+    def on_train_batch_end(
+        self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx
+    ):
+        if (batch_idx == 0) and self.train:
+            self.make_plots(pl_module, batch, trainer, "train")
 
     def on_validation_batch_end(
         self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx
     ):
-        if batch_idx == 0:
-            self.make_plots(pl_module, batch, trainer)
+        if (batch_idx == 0) and self.valid:
+            self.make_plots(pl_module, batch, trainer, "valid")
 
     def on_test_batch_end(
         self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx
     ):
-        if batch_idx == 0:
-            self.make_plots(pl_module, batch, trainer)
+        if (batch_idx == 0) and self.test:
+            self.make_plots(pl_module, batch, trainer, "test")
 
     def _save_plot(self, filepath, trainer):
         if trainer.is_global_zero:
@@ -133,7 +149,10 @@ class PlotCallback(Callback):
 
 
 class InferencePlotCallback(PlotCallback):
-    def make_plots(self, pl_module, batch, trainer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def make_plots(self, pl_module, batch, trainer, dataset):
         X_context, Y_context, X_target, Y_target = batch
 
         if trainer.on_gpu:
@@ -148,12 +167,12 @@ class InferencePlotCallback(PlotCallback):
             X_context, Y_context, X_target
         )
 
-        X_context = X_context.cpu()
-        Y_context = Y_context.cpu()
-        X_target = X_target.cpu()
-        Y_target = Y_target.cpu()
-        Y_prediction_mean = Y_prediction_mean.cpu()
-        Y_prediction_cov = Y_prediction_cov.cpu()
+        X_context = X_context.cpu().detach()
+        Y_context = Y_context.cpu().detach()
+        X_target = X_target.cpu().detach()
+        Y_target = Y_target.cpu().detach()
+        Y_prediction_mean = Y_prediction_mean.cpu().detach()
+        Y_prediction_cov = Y_prediction_cov.cpu().detach()
 
         for i in range(self.n_plots):
             fig, ax = plt.subplots(1, 1)
@@ -170,7 +189,7 @@ class InferencePlotCallback(PlotCallback):
             self._save_plot(
                 os.path.join(
                     self.dirpath,
-                    f"inference_epoch_{trainer.current_epoch}_{trainer.global_step}_plot_{i}.png",
+                    f"inference_epoch_{trainer.current_epoch}_{trainer.global_step}_{dataset}_{i}.png",
                 ),
                 trainer,
             )
@@ -185,7 +204,7 @@ class GPComparePlotCallback(PlotCallback):
         self.kernel = kernel
         self.obs_noise = obs_noise
 
-    def make_plots(self, pl_module, batch, trainer):
+    def make_plots(self, pl_module, batch, trainer, dataset):
         X_context, Y_context, X_target, Y_target = batch
 
         if trainer.on_gpu:
@@ -201,14 +220,14 @@ class GPComparePlotCallback(PlotCallback):
             X_context, Y_context, X_target, self.kernel, obs_noise=self.obs_noise
         )
 
-        X_context = X_context.cpu()
-        Y_context = Y_context.cpu()
-        X_target = X_target.cpu()
-        Y_target = Y_target.cpu()
-        Y_prediction_mean = Y_prediction_mean.cpu()
-        Y_prediction_cov = Y_prediction_cov.cpu()
-        Y_gp_mean = Y_gp_mean.cpu()
-        Y_gp_cov = Y_gp_cov.cpu()
+        X_context = X_context.cpu().detach()
+        Y_context = Y_context.cpu().detach()
+        X_target = X_target.cpu().detach()
+        Y_target = Y_target.cpu().detach()
+        Y_prediction_mean = Y_prediction_mean.cpu().detach()
+        Y_prediction_cov = Y_prediction_cov.cpu().detach()
+        Y_gp_mean = Y_gp_mean.cpu().detach()
+        Y_gp_cov = Y_gp_cov.cpu().detach()
 
         for i in range(self.n_plots):
             fig, ax = plt.subplots(1, 1)
@@ -245,7 +264,7 @@ class GPComparePlotCallback(PlotCallback):
             self._save_plot(
                 os.path.join(
                     self.dirpath,
-                    f"epoch_{trainer.current_epoch}_{trainer.global_step}_plot_{i}.png",
+                    f"epoch_{trainer.current_epoch}_{trainer.global_step}_{dataset}_{i}.png",
                 ),
                 trainer,
             )
@@ -253,41 +272,13 @@ class GPComparePlotCallback(PlotCallback):
             plt.close()
 
 
-def points_to_partial_img(img_size, x_points, y_points, fill_color=[0.0, 0.0, 1.0]):
-    img = np.zeros([img_size, img_size, 3])
-    x_points = x_points.astype(int)
-
-    if len(y_points.shape) == 1:
-        y_points = np.repeat(y_points[:, np.newaxis], 3, axis=1)
-
-    img[:, :, 0] = fill_color[0]
-    img[:, :, 1] = fill_color[1]
-    img[:, :, 2] = fill_color[2]
-
-    for point, color in zip(x_points, y_points):
-        img[point[1], point[0]] = color
-
-    return img
-
-
-def points_to_img(img_size, x_points, y_points):
-    img = np.zeros([img_size, img_size])
-    x_points = x_points.astype(int)
-
-    for point, val in zip(x_points, y_points):
-        img[point[1], point[0]] = val
-
-    return img
-
-
 class ImageCompleationPlotCallback(PlotCallback):
-    def __init__(self, img_size, *args, fill_color=[0.0, 0.0, 1.0], **kwargs):
+    def __init__(self, *args, fill_color=[0.0, 0.0, 1.0], **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.img_size = img_size
         self.fill_color = fill_color
 
-    def make_plots(self, pl_module, batch, trainer):
+    def make_plots(self, pl_module, batch, trainer, dataset):
         X_context, Y_context, X_target, Y_target = batch
 
         if trainer.on_gpu:
@@ -307,47 +298,28 @@ class ImageCompleationPlotCallback(PlotCallback):
         Y_context = Y_context.cpu().numpy()
         X_target = X_target.cpu().numpy()
         Y_target = Y_target.cpu().numpy()
-        Y_prediction_mean = Y_prediction_mean.cpu().numpy()
-        Y_prediction_cov = Y_prediction_cov.cpu().numpy()
+        Y_prediction_mean = Y_prediction_mean.detach().cpu().numpy()
+        Y_prediction_cov = Y_prediction_cov.detach().cpu().numpy()
+
+        img_size = int(math.sqrt(X_target.shape[1]))
 
         for i in range(self.n_plots):
-            fig, axs = plt.subplots(1, 3)
 
-            context_img = points_to_partial_img(
-                self.img_size,
+            fig, axs = plot_image_compleation(
                 X_context[i],
                 Y_context[i],
+                X_target[i],
+                Y_target[i],
+                Y_prediction_mean[i],
+                Y_prediction_cov[i],
+                img_size,
                 self.fill_color,
             )
-            mean_img = points_to_img(
-                self.img_size,
-                X_target[i],
-                Y_prediction_mean[i],
-            )
-            var_img = points_to_img(
-                self.img_size,
-                X_target[i],
-                Y_prediction_cov[i],
-            )
-
-            im = axs[0].imshow(context_img)
-            axs[0].set_title("Context")
-            # fig.colorbar(im, ax=axs[0])
-
-            im = axs[1].imshow(mean_img, cmap="gray", vimn=0, vmax=1)
-            axs[1].set_title("Mean")
-            # fig.colorbar(im, ax=axs[1])
-
-            im = axs[2].imshow(var_img, cmap="viridis")
-            axs[2].set_title("Var")
-            fig.colorbar(im, ax=axs[2])
-
-            plt.tight_layout()
 
             self._save_plot(
                 os.path.join(
                     self.dirpath,
-                    f"epoch_{trainer.current_epoch}_{trainer.global_step}_plot_{i}.png",
+                    f"epoch_{trainer.current_epoch}_{trainer.global_step}_{dataset}_{i}.png",
                 ),
                 trainer,
             )

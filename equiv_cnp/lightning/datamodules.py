@@ -49,9 +49,20 @@ class LightningGPDataModule(pl.LightningDataModule):
 
 
 class LightningMNISTDataModule(pl.LightningDataModule):
-    def __init__(self, trainset, testset, batch_size, test_valid_splits, **kwargs):
+    def __init__(
+        self,
+        trainset,
+        testset,
+        batch_size,
+        test_valid_splits,
+        test_batch_size=None,
+        **kwargs
+    ):
         super().__init__()
         self.batch_size = batch_size
+        self.test_batch_size = (
+            test_batch_size if test_batch_size is not None else batch_size
+        )
         self.trainset = trainset
         self.testset = testset
         self.test_valid_splits = test_valid_splits
@@ -75,7 +86,7 @@ class LightningMNISTDataModule(pl.LightningDataModule):
     def val_dataloader(self):
         return DataLoader(
             self.validset,
-            batch_size=self.batch_size,
+            batch_size=self.test_batch_size,
             shuffle=False,
             collate_fn=self.trainset._collate_fn,
             **self.kwargs
@@ -84,7 +95,7 @@ class LightningMNISTDataModule(pl.LightningDataModule):
     def test_dataloader(self):
         return DataLoader(
             self.testset,
-            batch_size=self.batch_size,
+            batch_size=self.test_batch_size,
             shuffle=False,
             collate_fn=self.trainset._collate_fn,
             **self.kwargs

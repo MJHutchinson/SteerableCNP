@@ -1,21 +1,20 @@
 # @package _group_
 
 cnn_decoder: D16-regular_huge
-sigmoid_mean: False
+sigmoid_mean: True
 embedding_kernel_type: rbf
-embedding_kernel_length_scale: 7.0
+embedding_kernel_length_scale: 0.5
 embedding_kernel_sigma_var: 1.0
-embedding_kernel_learnable: True
+embedding_kernel_learnable: False
 normalise_embedding: True
 output_kernel_type: rbf
-output_kernel_length_scale: 5.0
+output_kernel_length_scale: 0.5
 output_kernel_sigma_var: 1.0
-output_kernel_learnable: True
+output_kernel_learnable: False
 normalise_output: True
-covariance_activation: quadratic
-covariance_activation_parameters: {}
-grid_ranges: [-3,30]
-n_axes: 33
+covariance_activation: diagonal_softplus
+covariance_activation_parameters:
+  min_var: 0.001
 x_dim: 2
 context_dim: 1
 prediction_dim: 1

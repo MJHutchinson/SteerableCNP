@@ -4,12 +4,12 @@ timeout_min: 840
 cpus_per_task: 1
 tasks_per_node: 1
 mem_gb: 10
-name: ${model.name}_${dataset.name}
+name: $${dataset.name}_{experiment_name}
 partition: ziz-gpu
 max_num_timeout: 0
 array_parallelism: 4
 additional_parameters: {
   "wckey": "bigbayes_project",
   "gres": "gpu:GeForce_GTX_2080Ti:1",
-  # "nodelist": "zizgpu04.cpu.stats.ox.ac.uk",
-  }
+  "nodelist": "zizgpu04.cpu.stats.ox.ac.uk",
+}

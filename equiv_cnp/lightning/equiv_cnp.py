@@ -3,6 +3,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import pytorch_lightning as pl
 
+from torch.utils.data import Subset
+
 from equiv_cnp.equiv_cnp import EquivCNP
 from equiv_cnp.utils import multivariate_log_likelihood, get_e2_decoder, get_cnn_decoder
 from equiv_cnp.kernel import (
@@ -16,6 +18,7 @@ from equiv_cnp.covariance_activations import (
     quadratic_covariance_activation,
     diagonal_quadratic_covariance_activation,
     diagonal_softplus_covariance_activation,
+    diagonal_quadratic_softplus_covariance_activation,
 )
 from equiv_cnp.lightning import Mean
 
@@ -23,6 +26,7 @@ covariance_activation_functions = {
     "quadratic": quadratic_covariance_activation,
     "diagonal_quadratic": diagonal_quadratic_covariance_activation,
     "diagonal_softplus": diagonal_softplus_covariance_activation,
+    "diagonal_softplus_quadratic": diagonal_quadratic_softplus_covariance_activation,
 }
 
 
@@ -52,6 +56,7 @@ class LightningEquivCNP(pl.LightningModule):
         **kwargs,
     ):
         super().__init__()
+        self.save_hyperparameters()
 
         # parse the embedding kernel to use
         embedding_kernel = self.parse_kernel(
@@ -183,7 +188,7 @@ class LightningEquivCNP(pl.LightningModule):
             N = int(group[1:])
 
             if context_dim == 1:
-                rep_ids = [[0]]
+                rep_ids = [[0]] if not flip else [[0, 0]]
             elif context_dim == 2:
                 rep_ids = [[1]] if not flip else [[1, 1]]
 
@@ -268,9 +273,38 @@ class LightningImageEquivCNP(LightningEquivCNP):
         sigmoid_mean=True,
         **kwargs,
     ):
-        super(LightningImageEquivCNP, self).__init__(*args, **kwargs)
+        super(LightningImageEquivCNP, self).__init__(
+            *args, sigmoid_mean=sigmoid_mean, **kwargs
+        )
 
         self.sigmoid_mean = sigmoid_mean
+
+    def on_train_epoch_start(self, *args, **kwargs):
+        """Sets the grid in the EquivCNP appropriately for the data about to be passed"""
+        if isinstance(self.train_dataloader().dataset, Subset):
+            img_size = self.train_dataloader().dataset.dataset.grid_size
+        else:
+            img_size = self.train_dataloader().dataset.grid_size
+
+        self.equiv_cnp.discrete_rkhs_embedder.set_grid([-3, img_size + 2], img_size + 6)
+
+    def on_test_epoch_start(self, *args, **kwargs):
+        """Sets the grid in the EquivCNP appropriately for the data about to be passed"""
+        if isinstance(self.test_dataloader().dataset, Subset):
+            img_size = self.test_dataloader().dataset.dataset.grid_size
+        else:
+            img_size = self.test_dataloader().dataset.grid_size
+
+        self.equiv_cnp.discrete_rkhs_embedder.set_grid([-3, img_size + 2], img_size + 6)
+
+    def on_validation_epoch_start(self, *args, **kwargs):
+        """Sets the grid in the EquivCNP appropriately for the data about to be passed"""
+        if isinstance(self.val_dataloader().dataset, Subset):
+            img_size = self.val_dataloader().dataset.dataset.grid_size
+        else:
+            img_size = self.val_dataloader().dataset.grid_size
+
+        self.equiv_cnp.discrete_rkhs_embedder.set_grid([-3, img_size + 2], img_size + 6)
 
     def forward(self, X_context, Y_context, X_target):
         Y_prediction_mean, Y_prediction_cov = self.equiv_cnp(
