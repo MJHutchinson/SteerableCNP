@@ -13,7 +13,7 @@ class EquivCNP(EquivDeepSet):
         self,
         prediction_dim,
         covariance_activation_function,
-        min_sigma=0.0,
+        min_cov=0.0,
         **kwargs,
     ):
 
@@ -21,113 +21,43 @@ class EquivCNP(EquivDeepSet):
 
         self.prediction_dim = prediction_dim
         self.covariance_activation_function = covariance_activation_function
-        self.min_sigma = min_sigma
+        self.min_cov = min_cov
 
-        if self.dim == 2:
-            self.decoder = nn.Sequential(
-                Pass(
-                    Expression(
-                        lambda Y: rearrange(
-                            Y,
-                            "b (m1 m2) d -> b d m2 m1",
-                            m1=self.discrete_rkhs_embedder.n_axes[0],
-                            m2=self.discrete_rkhs_embedder.n_axes[1],
-                        )
-                    ),
-                    dim=1,
-                ),  # Reshape data to a grid for applying CNN
-                Pass(self.cnn, dim=1),  # apply CNN to the Y embedding
-                Pass(
-                    Expression(lambda Y: rearrange(Y, "b d m2 m1 -> b (m1 m2) d")),
-                    dim=1,
-                ),  # reshape Y predictions back from grid
-                Pass(
-                    Expression(
-                        lambda Y: torch.cat(
-                            [
-                                Y[:, :, : self.prediction_dim],
-                                self.covariance_activation_function(
-                                    Y[:, :, self.prediction_dim :]
-                                ),
-                            ],
-                            dim=2,
-                        )
-                    ),
-                    dim=1,
-                ),  # apply covariance activation function
-                Expression(
-                    lambda inpt: kernel_smooth(
-                        *inpt,
-                        self.output_kernel,
-                        normalise=self.normalise_output,
-                    )
-                ),  # smooth the outputs to the target set
-                Expression(
-                    lambda Y_target: (
-                        Y_target[:, :, : self.prediction_dim],
-                        rearrange(
-                            Y_target[:, :, self.prediction_dim :],
-                            "b m (d1 d2) -> b m d1 d2",
-                            d1=self.prediction_dim,
-                            d2=self.prediction_dim,
-                        )
-                        + torch.eye(self.prediction_dim).to(Y_target.device) * 1e-8,
-                    ),
-                ),  # return the mean and covariance matrices of each point. Bound covariance away from 0.
-            )
-        elif self.dim == 3:
-            self.decoder = nn.Sequential(
-                Pass(
-                    Expression(
-                        lambda Y: rearrange(
-                            Y,
-                            "b (m1 m2 m3) d -> b m1 m2 m3 d",
-                            m1=self.discrete_rkhs_embedder.n_axes[0],
-                            m2=self.discrete_rkhs_embedder.n_axes[1],
-                            m3=self.discrete_rkhs_embedder.n_axes[2],
-                        )
-                    ),
-                    dim=1,
-                ),  # Reshape data to a grid for applying CNN
-                Pass(self.cnn, dim=1),  # apply CNN to the Y embedding
-                Pass(
-                    Expression(
-                        lambda Y: rearrange(Y, "b m1 m2 m3 d -> b (m1 m2 m3) d")
-                    ),
-                    dim=1,
-                ),  # reshape Y predictions back from grid
-                Pass(
-                    Expression(
-                        lambda Y: torch.cat(
-                            [
-                                Y[:, :, : self.prediction_dim],
-                                self.covariance_activation_function(
-                                    Y[:, :, self.prediction_dim :]
-                                ),
-                            ],
-                            dim=2,
-                        )
-                    ),
-                    dim=1,
-                ),  # apply covariance activation function
-                Expression(
-                    lambda inpt: kernel_smooth(
-                        *inpt,
-                        self.output_kernel,
-                        normalise=self.normalise_output,
-                    )
-                ),  # smooth the outputs to the target set
-                Expression(
-                    lambda Y_target: (
-                        Y_target[:, :, : self.prediction_dim],
-                        rearrange(
-                            Y_target[:, :, self.prediction_dim :],
-                            "b m (d1 d2) -> b m d1 d2",
-                            d1=self.prediction_dim,
-                            d2=self.prediction_dim,
-                        ),
-                    ),
-                ),  # return the mean and covariance matrices of each point
-            )
-        else:
-            raise NotImplementedError(f"Not implemented for dim = {self.dim}")
+    def decode(self, X_grid, Y_grid, X_target):
+        # reshape Y_grid to go through the CNN
+        Y_grid = self.stack_to_grid(Y_grid)
+        # pass Y's through the CNN
+        Y_grid = self.cnn(Y_grid)
+        # reshape Y's back to a stack
+        Y_grid = self.grid_to_stack(Y_grid)
+        # apply the covariance activation function to the covariances
+        Y_grid = torch.cat(
+            [
+                Y_grid[:, :, : self.prediction_dim],
+                self.covariance_activation_function(
+                    Y_grid[:, :, self.prediction_dim :]
+                ),
+            ],
+            dim=-1,
+        )
+        # kernel smooth the outputs to the target points
+        Y_target = kernel_smooth(
+            X_grid,
+            Y_grid,
+            X_target,
+            self.output_kernel,
+            normalise=self.normalise_output,
+        )
+        # split the output into mean and covariance, and reshape the covariances.
+        Y_mean = Y_target[:, :, : self.prediction_dim]
+        Y_cov = rearrange(
+            Y_target[:, :, self.prediction_dim :],
+            "b m (d1 d2) -> b m d1 d2",
+            d1=self.prediction_dim,
+            d2=self.prediction_dim,
+        )
+        # add on a minimum covariance
+        Y_cov = Y_cov + (
+            torch.eye(self.prediction_dim).to(Y_target.device) * self.min_cov
+        )
+        return Y_mean, Y_cov

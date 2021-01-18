@@ -60,6 +60,7 @@ def main(args):
             test_valid_splits=args.test_valid_splits,
         )
         datamodule.setup()
+        args.finetune_epochs = 0
     elif args.dataset.name == "MultiMNIST":
         trainset = MultiMNIST(
             root=os.path.join(args.paths.datadir, "mnist"),

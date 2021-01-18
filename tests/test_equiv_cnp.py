@@ -11,28 +11,47 @@ from equiv_cnp.kernel import (
 )
 
 from equiv_cnp.equiv_cnp import EquivCNP
-from equiv_cnp.covariance_activations import quadratic_covariance_activation
+from equiv_cnp.covariance_activations import (
+    quadratic_covariance_activation,
+    diagonal_quadratic_covariance_activation,
+    diagonal_softplus_covariance_activation,
+    diagonal_quadratic_softplus_covariance_activation,
+)
 from equiv_cnp.utils import (
     get_e2_decoder,
+    get_cnn_decoder,
     grid_2d,
     plot_vector_field,
     plot_inference,
     plot_embedding,
     plot_mean_cov,
 )
+from equiv_cnp.datasets import MNISTDataset
 
 import e2cnn.nn as gnn
 
 import matplotlib.pyplot as plt
 
+import os
+
+os.chdir("/data/ziz/not-backed-up/mhutchin/EquivCNP")
+
+# %%
+
+dataset = MNISTDataset("data/mnist", 7, 350, 28 * 28)
+
+
 # %%
 
 embedding_kernel = SeparableKernel(2, 3, RBFKernel(2, 1.0))
-grid_ranges = [-4.0, 4.0]
-n_axes = 20
+grid_ranges = [-3.0, 10.0]
+n_axes = 34
 normalise = True
-cnn = get_e2_decoder(4, False, "regular_small", [1], [1], activation="normrelu")
-output_kernel = SeparableKernel(2, 6, RBFKernel(2, 1.0))
+# cnn = get_e2_decoder(
+#     4, False, "regular_small", [0], [0], covariance_activation="quadratic"
+# )
+cnn = get_cnn_decoder("small", 2, 2, covariance_activation="diagonal_softplus")
+output_kernel = SeparableKernel(2, 4, RBFKernel(2, 1.0))
 dim = 2
 
 # %%
@@ -48,6 +67,7 @@ cnp = EquivCNP(
     cnn=cnn,
     output_kernel=output_kernel,
     dim=dim,
+    min_cov=0.0001,
 )
 # %%
 

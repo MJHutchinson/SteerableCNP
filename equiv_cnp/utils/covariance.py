@@ -67,7 +67,11 @@ def get_pre_covariance_dim(mean_dim, covariance_activation="quadratic"):
         return mean_dim ** 2
     elif covariance_activation == "eigenvalue":
         return 6
-    elif covariance_activation in ["diagonal_quadratic", "diagonal_softplus"]:
+    elif covariance_activation in [
+        "diagonal_softplus_quadratic",
+        "diagonal_softplus",
+        "diagonal_quadratic",
+    ]:
         return mean_dim
     else:
         raise ValueError(

@@ -52,6 +52,7 @@ class LightningEquivCNP(pl.LightningModule):
         context_dim=2,
         prediction_dim=2,
         context_in_target=False,
+        min_cov=0.0,
         lr=5e-4,
         **kwargs,
     ):
@@ -97,6 +98,7 @@ class LightningEquivCNP(pl.LightningModule):
             cnn=cnn,
             output_kernel=output_kernel,
             dim=x_dim,
+            min_cov=min_cov,
         )
 
         self.context_in_target = context_in_target
@@ -217,8 +219,8 @@ class LightningEquivCNP(pl.LightningModule):
             Y_prediction_mean, Y_prediction_cov, Y_target
         )
 
-        # self.log("mean_pred", Y_prediction_mean.mean(), on_step=True, on_epoch=False)
-        # self.log("mean_cov", Y_prediction_cov.mean(), on_step=True, on_epoch=False)
+        self.log("mean_pred", Y_prediction_mean.mean(), on_step=True, on_epoch=False)
+        self.log("mean_cov", Y_prediction_cov.mean(), on_step=True, on_epoch=False)
 
         return log_ll
 

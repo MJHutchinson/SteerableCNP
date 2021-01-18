@@ -7,7 +7,7 @@ mem_gb: 10
 name: $${dataset.name}_{experiment_name}
 partition: ziz-gpu
 max_num_timeout: 0
-array_parallelism: 4
+array_parallelism: 6
 additional_parameters: {
   "wckey": "bigbayes_project",
   "gres": "gpu:GeForce_GTX_2080Ti:1",
