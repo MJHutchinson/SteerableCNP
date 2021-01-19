@@ -12,8 +12,8 @@ output_kernel_length_scale: 0.5
 output_kernel_sigma_var: 1.0
 output_kernel_learnable: False
 normalise_output: True
-min_cov: 0.0001
-covariance_activation: diagonal_softplus_quadratic
+min_cov: 0.01
+covariance_activation: diagonal_softplus
 covariance_activation_parameters: {}
 x_dim: 2
 context_dim: 1
