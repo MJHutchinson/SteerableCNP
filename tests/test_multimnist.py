@@ -1,6 +1,6 @@
 # %%
 import os
-from equiv_cnp.datasets import MultiMNIST, MNISTDataset
+from steer_cnp.datasets import MultiMNIST, MNISTDataset
 from PIL import Image
 import numpy as np
 
@@ -8,7 +8,19 @@ import numpy as np
 os.getcwd()
 os.chdir("/data/ziz/not-backed-up/mhutchin/EquivCNP/")
 # %%
-data = MultiMNIST("data", 25, (3 * 28) ** 2, (3 * 28) ** 2, n_digits=2)
+data = MultiMNIST(
+    "data",
+    0.1,
+    0.5,
+    1.0,
+    train=True,
+    translate=False,
+    rotate=False,
+    n_digits=1,
+    canvas_multiplier=1,
+    include_blanks=True,
+    seed=0,
+)
 
 # %%
 Image.fromarray(

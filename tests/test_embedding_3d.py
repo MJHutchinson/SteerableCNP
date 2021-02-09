@@ -1,7 +1,7 @@
 # %%
 import torch
 
-from equiv_cnp.kernel import (
+from steer_cnp.kernel import (
     RBFKernel,
     SeparableKernel,
     DotProductKernel,
@@ -10,9 +10,9 @@ from equiv_cnp.kernel import (
     kernel_smooth,
 )
 
-from equiv_cnp.rkhs_embedding import DiscretisedRKHSEmbedding
+from steer_cnp.rkhs_embedding import DiscretisedRKHSEmbedding
 
-from equiv_cnp.utils import expand_with_ones, plot_embedding, plot_vector_field
+from steer_cnp.utils import expand_with_ones, plot_embedding, plot_vector_field
 
 import matplotlib.pyplot as plt
 

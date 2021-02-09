@@ -3,7 +3,7 @@ import torch
 
 from einops import rearrange, 
 
-from equiv_cnp.utils import get_e2_decoder, grid_2d, plot_vector_field
+from steer_cnp.utils import get_e2_decoder, grid_2d, plot_vector_field
 
 # %%
 

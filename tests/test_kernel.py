@@ -1,7 +1,7 @@
 # %%
 import torch
 
-from equiv_cnp.kernel import (
+from steer_cnp.kernel import (
     RBFKernel,
     SeparableKernel,
     DotProductKernel,

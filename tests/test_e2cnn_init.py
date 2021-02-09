@@ -1,6 +1,6 @@
 # %%
 import torch
-from equiv_cnp.utils import get_e2_decoder
+from steer_cnp.utils import get_e2_decoder
 
 # %%
 m_vec = get_e2_decoder(4, False, "regular_huge", [[1]], [[1]])

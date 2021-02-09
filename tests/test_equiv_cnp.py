@@ -1,7 +1,7 @@
 # %%
 import torch
 
-from equiv_cnp.kernel import (
+from steer_cnp.kernel import (
     RBFKernel,
     SeparableKernel,
     DotProductKernel,
@@ -10,14 +10,14 @@ from equiv_cnp.kernel import (
     kernel_smooth,
 )
 
-from equiv_cnp.equiv_cnp import EquivCNP
-from equiv_cnp.covariance_activations import (
+from steer_cnp.steer_cnp import SteerCNP
+from steer_cnp.covariance_activations import (
     quadratic_covariance_activation,
     diagonal_quadratic_covariance_activation,
     diagonal_softplus_covariance_activation,
     diagonal_quadratic_softplus_covariance_activation,
 )
-from equiv_cnp.utils import (
+from steer_cnp.utils import (
     get_e2_decoder,
     get_cnn_decoder,
     grid_2d,
@@ -26,7 +26,7 @@ from equiv_cnp.utils import (
     plot_embedding,
     plot_mean_cov,
 )
-from equiv_cnp.datasets import MNISTDataset
+from steer_cnp.datasets import MNISTDataset
 
 import e2cnn.nn as gnn
 
@@ -34,7 +34,7 @@ import matplotlib.pyplot as plt
 
 import os
 
-os.chdir("/data/ziz/not-backed-up/mhutchin/EquivCNP")
+os.chdir("/data/ziz/not-backed-up/mhutchin/SteerCNP")
 
 # %%
 
@@ -56,7 +56,7 @@ dim = 2
 
 # %%
 
-cnp = EquivCNP(
+cnp = SteerCNP(
     prediction_dim=2,
     covariance_activation_function=quadratic_covariance_activation,
     grid_ranges=grid_ranges,
@@ -110,7 +110,7 @@ gspace = cnn[1].in_type.gspace
 input_type = gnn.FieldType(gspace, [gspace.irrep(1)])
 
 # %%
-def test_equivaraince_example(model, X_context, Y_context, X_target, in_field_type):
+def test_steeraraince_example(model, X_context, Y_context, X_target, in_field_type):
     n_test = len(list(in_field_type.testing_elements))
     dtype = X_context.dtype
     device = X_context.device
@@ -156,7 +156,7 @@ def test_equivaraince_example(model, X_context, Y_context, X_target, in_field_ty
 
 
 # %%
-mean_error, cov_error = test_equivaraince_example(
+mean_error, cov_error = test_steeraraince_example(
     cnp, X_context.squeeze(), Y_context.squeeze(), X_target.squeeze(), input_type
 )
 

@@ -1,0 +1,18 @@
+\begin{table}
+\centering
+\caption{Log likelihood on MNIST and rotMNIST for models trained on rotMNIST}
+\label{tab:mnist_tests}
+\begin{tabular}{lrr}
+\toprule
+{} &                       MNIST &                    rotMNIST \\
+Test dataset       &                             &                             \\
+\midrule
+ConvCNP            &         ${1.093 \pm 0.000}$ &         ${1.135 \pm 0.000}$ \\
+SteerCNP($C_4$)    &  $\mathbf{1.140 \pm 0.060}$ &  $\mathbf{1.194 \pm 0.034}$ \\
+SteerCNP($C_{16}$) &  $\mathbf{1.162 \pm 0.005}$ &  $\mathbf{1.205 \pm 0.015}$ \\
+SteerCNP($C_{8}$)  &  $\mathbf{1.158 \pm 0.016}$ &  $\mathbf{1.204 \pm 0.007}$ \\
+SteerCNP($D_4$)    &         ${1.152 \pm 0.011}$ &  $\mathbf{1.199 \pm 0.017}$ \\
+SteerCNP($D_8$)    &  $\mathbf{1.161 \pm 0.014}$ &  $\mathbf{1.206 \pm 0.015}$ \\
+\bottomrule
+\end{tabular}
+\end{table}

@@ -1,7 +1,7 @@
 # %%
 import torch
 
-from equiv_cnp.kernel import (
+from steer_cnp.kernel import (
     RBFKernel,
     SeparableKernel,
     DotProductKernel,
@@ -9,8 +9,8 @@ from equiv_cnp.kernel import (
     RBFCurlFreeKernel,
     kernel_smooth,
 )
-from equiv_cnp.gp import sample_gp_prior, conditional_gp_posterior
-from equiv_cnp.utils import sample_gp_grid_2d, plot_inference
+from steer_cnp.gp import sample_gp_prior, conditional_gp_posterior
+from steer_cnp.utils import sample_gp_grid_2d, plot_inference
 import matplotlib.pyplot as plt
 
 # %%

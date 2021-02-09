@@ -1,10 +1,10 @@
 # %%
 import torch
 import numpy as np
-from equiv_cnp.datasets import MNISTDataset
+from steer_cnp.datasets import MNISTDataset
 import matplotlib.pyplot as plt
 
-from equiv_cnp.kernel import (
+from steer_cnp.kernel import (
     RBFKernel,
     RBFKernelReparametrised,
     SeparableKernel,
@@ -13,7 +13,7 @@ from equiv_cnp.kernel import (
     RBFCurlFreeKernel,
     kernel_smooth,
 )
-from equiv_cnp.rkhs_embedding import DiscretisedRKHSEmbedding
+from steer_cnp.rkhs_embedding import DiscretisedRKHSEmbedding
 
 # %%
 

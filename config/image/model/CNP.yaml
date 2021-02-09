@@ -1,0 +1,20 @@
+# @package _group_
+
+x_dim: 2
+context_dim: 1
+embedding_dim: 512
+prediction_dim: 1
+x_encoder_hidden_dims: null
+encoder_hidden_dims: 
+  - 512
+  - 512
+decoder_hidden_dim: 
+  - 512
+  - 512
+  - 512
+covariance_activation_function: diagonal_softplus
+min_cov: 0.01
+sigmoid_mean: True
+lr: 1e-3
+
+name: CNP

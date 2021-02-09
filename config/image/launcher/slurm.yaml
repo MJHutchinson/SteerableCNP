@@ -4,7 +4,7 @@ timeout_min: 840
 cpus_per_task: 1
 tasks_per_node: 1
 mem_gb: 10
-name: $${dataset.name}_{experiment_name}
+name: ${experiment_name}_${dataset.name}_${model.name}
 partition: ziz-gpu
 max_num_timeout: 0
 array_parallelism: 6

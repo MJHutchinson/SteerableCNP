@@ -1,7 +1,7 @@
 # %%
 import torch
 
-from equiv_cnp.kernel import (
+from steer_cnp.kernel import (
     RBFKernel,
     SeparableKernel,
     DotProductKernel,
@@ -10,8 +10,8 @@ from equiv_cnp.kernel import (
     kernel_smooth,
 )
 
-from equiv_cnp.equiv_deepsets import EquivDeepSet
-from equiv_cnp.utils import (
+from steer_cnp.equiv_deepsets import EquivDeepSet
+from steer_cnp.utils import (
     get_e2_decoder,
     grid_2d,
     plot_vector_field,

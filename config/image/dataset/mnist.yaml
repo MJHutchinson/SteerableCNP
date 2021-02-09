@@ -1,5 +1,17 @@
 # @package _group_
 
 name: MNIST
-augment_train: False
-augment_test: False
+seed: 0
+
+train_args:
+  translate: False
+  rotate: False
+  n_digits: 1
+  canvas_multiplier: 1
+  include_blanks: False
+test_args:
+  translate: False
+  rotate: False
+  n_digits: 1
+  canvas_multiplier: 1
+  include_blanks: False

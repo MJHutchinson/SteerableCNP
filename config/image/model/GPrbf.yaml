@@ -1,0 +1,11 @@
+# @package _group_
+
+kernel_type: rbf
+kernel_length_scale: 1.0
+kernel_sigma_var: 1.0
+kernel_learnable: False
+x_dim: 2
+prediction_dim: 1
+chol_noise: 1e-8
+
+name: GP-RBF

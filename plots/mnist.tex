@@ -1,0 +1,28 @@
+\begin{table}
+\centering
+\label{tab:mnist}
+\begin{tabular}{llr}
+\toprule
+                &          &         test log likelihood \\
+Model & Train dataset &                             \\
+\midrule
+\multirow{2}{*}{ConvCNP} & MNIST &  $\mathbf{1.142 \pm 0.128}$ \\
+                & rotMNIST &         ${1.143 \pm 0.033}$ \\
+\cline{1-3}
+\multirow{2}{*}{SteerCNP($C_4$)} & MNIST &         ${1.168 \pm 0.015}$ \\
+                & rotMNIST &         ${1.191 \pm 0.010}$ \\
+\cline{1-3}
+\multirow{2}{*}{SteerCNP($C_{16}$)} & MNIST &         ${1.179 \pm 0.006}$ \\
+                & rotMNIST &  $\mathbf{1.204 \pm 0.005}$ \\
+\cline{1-3}
+\multirow{2}{*}{SteerCNP($C_{8}$)} & MNIST &         ${1.174 \pm 0.009}$ \\
+                & rotMNIST &         ${1.197 \pm 0.009}$ \\
+\cline{1-3}
+\multirow{2}{*}{SteerCNP($D_4$)} & MNIST &         ${1.174 \pm 0.005}$ \\
+                & rotMNIST &         ${1.195 \pm 0.006}$ \\
+\cline{1-3}
+\multirow{2}{*}{SteerCNP($D_8$)} & MNIST &         ${1.184 \pm 0.009}$ \\
+                & rotMNIST &  $\mathbf{1.206 \pm 0.004}$ \\
+\bottomrule
+\end{tabular}
+\end{table}

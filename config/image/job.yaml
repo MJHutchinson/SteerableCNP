@@ -3,13 +3,13 @@ job:
   config:
     # configuration for the ${hydra.job.override_dirname} runtime variable
     override_dirname:
-      exclude_keys: [name, launcher, run, dataset, model, experiment_name, seed]
+      exclude_keys: [name, launcher, hydra.launcher.array_parallelism, run, dataset, model, experiment_name, seed, pretrained_checkpoint, epochs, finetune_epochs, val_check_interval, limit_train_batches]
 
 run:
   # Output directory for normal runs
   # dir: ${paths.logdir}/${paths.rundir}/${seed}
   # dir: ${paths.logdir}/${experiment_name}_${hydra.job.override_dirname}/${seed}
-  dir: ${paths.logdir}/${dataset.name}/${model.name}/${experiment_name}_${hydra.job.override_dirname}/${seed}
+  dir: ${paths.logdir}/${dataset.name}/${model.name}/${experiment_name}/${hydra.job.override_dirname}/${seed}
   # dir: ${paths.experiments}/${name}/${hydra.job.override_dirname}/${run}
 sweep:
 #   # Output directory for sweep runs

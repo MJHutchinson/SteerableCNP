@@ -8,13 +8,16 @@ train_args:
   rotate: False
   n_digits: 1
   canvas_multiplier: 1
-finetune_args:
-  translate: False
-  rotate: False
-  n_digits: 1
-  canvas_multiplier: 2
+  include_blanks: False
 test_args:
   translate: True
   rotate: True
   n_digits: 2
   canvas_multiplier: 2
+  include_blanks: False
+finetune_args:
+  translate: False
+  rotate: False
+  n_digits: 1
+  canvas_multiplier: 2
+  include_blanks: False
