@@ -7,6 +7,7 @@ Implementation of SteerableCNPs (and equivariant Gaussian Processes) for the pap
 ## Library
 
 The library provides the main following functionality:
+
 - Implementation of discretised Equivariant DeepSets architecture, and the extension to Steerable CNPs
 - Utilising the E2CNN libary, a quick way to build steerable CNNs to use as the decoders in those architectures.
 - Code to do simple equivariant Gaussian processes with RBF, divergence-free or curl-free kernels.
@@ -14,14 +15,16 @@ The library provides the main following functionality:
 - (optional) PyTorch-Lightning modules for the SteerableCNP, GP, and CNP for easy experimentation. Enable these by installing the PyTorch-Lightning library. 
 
 ## Installation
+
 This repo can be installed to run the experiments by cloning the repo and running `setup_venv.sh`. Please note the additional steps in this file, and update the PyTorch version and CUDA requirements to match your system. Please note this installs additional packages such as Hydra and PyTorch-Lightning required to run the experiment code. To install the raw library to use in your own experiments, you can either clone the repo and install via `pip install -e .` or directly from github via `pip install git+git://github.com/MJHutchinson/SteerableCNP.git#egg=steer_cnp`
 
-## Running the MNIST experiments 
+## Running the MNIST experiments
+
 ![MNIST Datasets](.github/images/MNIST_datasets.png)
 
-The main sweep of Steerabble CNPs, ConvCNPs and CNPs can be run by executing the `mnist_experiments_circular_pad_blanks.sh` script. By default these are set up to use a SLURM job scheduler, just delete the line `~hydra/launcher=submitit_slurm launcher=slurm`. 
+The main sweep of Steerable CNPs, ConvCNPs and CNPs can be run by executing the `mnist_experiments_circular_pad_blanks.sh` script.
 
-To test these models on the various datasets, run `mnist_experiments_test_models_circular_pad_blanks.sh`. 
+To test these models on the various datasets, run `mnist_experiments_test_models_circular_pad_blanks.sh`.
 
 To run the grid search over GP parameters, run `mnist_experiments_gp_sweep.sh`.
 
