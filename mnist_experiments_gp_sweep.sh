@@ -1,6 +1,6 @@
 python mnist_test_models.py -m  \
-    hydra/launcher=submitit_slurm launcher=slurm \
-    hydra.launcher.array_parallelism=1 \
+    # hydra/launcher=submitit_slurm launcher=slurm \
+    # hydra.launcher.array_parallelism=1 \
     model=GPrbf \
     dataset=mnist \
     experiment_name=mnist_experiments_more_chol \

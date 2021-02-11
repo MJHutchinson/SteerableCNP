@@ -1,5 +1,5 @@
 python mnist_train_models.py -m  \
-    hydra/launcher=submitit_slurm launcher=slurm \
+    # hydra/launcher=submitit_slurm launcher=slurm \
     model=T2,C4,D4,C8,D8,C16 \
     dataset=mnist \
     experiment_name=mnist_experiments_blanks \
@@ -13,7 +13,7 @@ python mnist_train_models.py -m  \
     seed=1,9,17  \
 
 python mnist_train_models.py -m  \
-    hydra/launcher=submitit_slurm launcher=slurm \
+    # hydra/launcher=submitit_slurm launcher=slurm \
     model=CNP \
     dataset=mnist \
     experiment_name=mnist_experiments_blanks \
